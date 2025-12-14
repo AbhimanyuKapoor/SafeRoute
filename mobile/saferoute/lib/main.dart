@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 import 'package:saferoute/views/login_view.dart';
 
 void main() {
@@ -7,70 +9,98 @@ void main() {
     MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const RegisterView(),
+      home: const HomeMapView(),
     ),
   );
 }
 
-class RegisterView extends StatefulWidget {
-  const RegisterView({super.key});
+class HomeMapView extends StatefulWidget {
+  const HomeMapView({super.key});
 
   @override
-  State<RegisterView> createState() => _RegisterViewState();
+  State<HomeMapView> createState() => _HomeMapViewState();
 }
 
-class _RegisterViewState extends State<RegisterView> {
-  late final TextEditingController _email;
-  late final TextEditingController _password;
+class _HomeMapViewState extends State<HomeMapView> {
+  Location _locationController = new Location();
+
+  final _center = const LatLng(15.366103, 75.152841);
+  final _applePark = const LatLng(15.355181, 75.141412);
+
+  LatLng? _currentPosition;
 
   @override
   void initState() {
-    _email = TextEditingController();
-    _password = TextEditingController();
+    getLocationUpdates();
     super.initState();
   }
 
   @override
-  void dispose() {
-    _email = TextEditingController();
-    _password = TextEditingController();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              enableSuggestions: false,
-              autocorrect: false,
-              decoration: const InputDecoration(
-                hintText: 'Enter your email address',
+    return MaterialApp(
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.green[700]),
+      home: Scaffold(
+        body: _currentPosition == null
+            ? const Center(child: Text('Loading...'))
+            : GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: _center,
+                  zoom: 13.0,
+                ),
+                markers: {
+                  Marker(
+                    markerId: MarkerId('currentLocation'),
+                    icon: BitmapDescriptor.defaultMarker,
+                    position: _currentPosition!,
+                  ),
+                  Marker(
+                    markerId: MarkerId('sourceLocation'),
+                    icon: BitmapDescriptor.defaultMarker,
+                    position: _center,
+                  ),
+                  Marker(
+                    markerId: MarkerId('destinationLocation'),
+                    icon: BitmapDescriptor.defaultMarker,
+                    position: _applePark,
+                  ),
+                },
+                zoomControlsEnabled: true,
               ),
-            ),
-            TextField(
-              controller: _password,
-              enableSuggestions: false,
-              autocorrect: false,
-              obscureText: true,
-              decoration: const InputDecoration(
-                hintText: 'Enter your password',
-              ),
-            ),
-            TextButton(onPressed: () {}, child: const Text('Register')),
-            TextButton(
-              onPressed: () {},
-              child: const Text('Already Registered? Login Here'),
-            ),
-          ],
-        ),
       ),
     );
+  }
+
+  Future<void> getLocationUpdates() async {
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+
+    _serviceEnabled = await _locationController.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await _locationController.requestService();
+      if (!_serviceEnabled) return;
+    }
+
+    _permissionGranted = await _locationController.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await _locationController.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    _locationController.onLocationChanged.listen((
+      LocationData currentLocation,
+    ) {
+      if (currentLocation.latitude != null &&
+          currentLocation.longitude != null) {
+        setState(() {
+          _currentPosition = LatLng(
+            currentLocation.latitude!,
+            currentLocation.longitude!,
+          );
+          print(_currentPosition);
+        });
+      }
+    });
   }
 }
