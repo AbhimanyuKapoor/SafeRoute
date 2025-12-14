@@ -58,8 +58,12 @@ func AnalyzeRoute(c *gin.Context) {
 
 		modelScore, _ := mlClient.Predict(imgURL)
 		timeScore := safety.TimeOfDayScore(time.Now())
-		roadScore := safety.RoadTypeScore("RESIDENTIAL")
 		activityScore := safety.ActivityLikelihoodScore()
+		roadScore, err := safety.ComputeRoadSafetyScore(p, apiKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error in ComputeRoadSafetyScore:": err})
+			return
+		}
 
 		// Segment safety indicators
 		signals := safety.SegmentSignals{
