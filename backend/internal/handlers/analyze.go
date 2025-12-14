@@ -3,9 +3,12 @@ package handlers
 import (
 	"SafeRoute/internal/dto"
 	"SafeRoute/internal/maps"
+	"SafeRoute/internal/ml"
+	"SafeRoute/internal/safety"
 	"SafeRoute/internal/utils"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,8 +40,12 @@ func AnalyzeRoute(c *gin.Context) {
 	// Sampling points every 500 metres
 	segments := utils.SampleRoute(points, 500)
 
+	var segmentSignals []safety.SegmentSignals
 	var segmentResults []dto.SegmentResult
+	var segmentScores []int
+	mlClient := ml.NewMockClient()
 
+	// Calculating segment wise safety scores
 	for _, p := range segments {
 
 		imgURL := maps.BuildStreetViewURL(
@@ -49,45 +56,57 @@ func AnalyzeRoute(c *gin.Context) {
 			apiKey,
 		)
 
+		modelScore, _ := mlClient.Predict(imgURL)
+		timeScore := safety.TimeOfDayScore(time.Now())
+		roadScore := safety.RoadTypeScore("RESIDENTIAL")
+		activityScore := safety.ActivityLikelihoodScore()
+
+		// Segment safety indicators
+		signals := safety.SegmentSignals{
+			Lighting:           int(modelScore.Lighting * 100),
+			Crowd:              int(modelScore.Crowd * 100),
+			ActivityLikelihood: activityScore,
+			TimeOfDay:          timeScore,
+			RoadType:           roadScore,
+		}
+		segmentSignals = append(segmentSignals, signals)
+
+		// Segment score based on safety indicators
+		segmentScore := safety.SegmentSafetyScore(signals)
+		segmentScores = append(segmentScores, segmentScore)
+
 		segmentResults = append(segmentResults, dto.SegmentResult{
 			Coordinate: dto.LatLng{
 				Lat: p.Lat,
 				Lng: p.Lng,
 			},
-			StreetViewURL: imgURL,
+			LightingScore:           int(modelScore.Lighting * 100),
+			CrowdScore:              int(modelScore.Crowd * 100),
+			TimeOfDayScore:          timeScore,
+			RoadTypeScore:           roadScore,
+			ActivityLikelihoodScore: activityScore,
+			SegmentSafetyScore:      segmentScore,
 		})
 	}
 
+	// Getting final route score
+	routeScore := safety.RouteSafetyScore(segmentScores)
+	risk := safety.RiskLevel(routeScore)
+
+	avgSignals := safety.AggregateRouteSignals(segmentSignals)
+	explanations := safety.ExplainRoute(avgSignals)
+
 	resp := dto.AnalyzeRouteResponse{
 		Route: dto.RouteSummary{
-			DistanceKm:  float64(route.DistanceMeters) / 1000,
-			DurationMin: route.DurationSec / 60,
-			SafetyScore: 0,
-			RiskLevel:   "UNKNOWN",
+			Polyline:     route.Polyline,
+			DistanceKm:   float64(route.DistanceMeters) / 1000,
+			DurationMin:  route.DurationSec / 60,
+			SafetyScore:  routeScore,
+			RiskLevel:    risk,
+			Explanations: explanations,
 		},
 		Segments: segmentResults,
 	}
-
-	// Mock response
-	// resp := dto.AnalyzeRouteResponse{
-	// 	Route: dto.RouteSummary{
-	// 		DistanceKm:  5.2,
-	// 		DurationMin: 18,
-	// 		SafetyScore: 76,
-	// 		RiskLevel:   "MEDIUM",
-	// 	},
-	// 	Segments: []dto.SegmentResult{
-	// 		{
-	// 			Coordinate: dto.LatLng{
-	// 				Lat: req.From.Lat,
-	// 				Lng: req.From.Lng,
-	// 			},
-	// 			LightingScore: 80,
-	// 			CrowdScore:    65,
-	// 			SegmentScore:  73,
-	// 		},
-	// 	},
-	// }
 
 	c.JSON(http.StatusOK, resp)
 }

@@ -11,31 +11,25 @@ type AnalyzeRouteRequest struct {
 }
 
 type RouteSummary struct {
-	DistanceKm  float64 `json:"distance_km"`
-	DurationMin int     `json:"duration_min"`
-	SafetyScore int     `json:"safety_score"`
-	RiskLevel   string  `json:"risk_level"`
+	Polyline     string            `json:"polyline"`
+	DistanceKm   float64           `json:"distance_km"`
+	DurationMin  int               `json:"duration_min"`
+	SafetyScore  int               `json:"safety_score"`
+	RiskLevel    string            `json:"risk_level"`
+	Explanations map[string]string `json:"explanations"`
 }
 
-// type SegmentResult struct {
-// 	Coordinate    LatLng `json:"coordinate"`
-// 	LightingScore int    `json:"lighting_score"`
-// 	CrowdScore    int    `json:"crowd_score"`
-// 	SegmentScore  int    `json:"segment_score"`
-// }
-
 type SegmentResult struct {
-	Coordinate    LatLng `json:"coordinate"`
-	LightingScore int    `json:"lighting_score"`
-	StreetViewURL string `json:"street_view_url"`
+	Coordinate              LatLng `json:"coordinate"`
+	LightingScore           int    `json:"lighting_score"`
+	CrowdScore              int    `json:"crowd_score"`
+	TimeOfDayScore          int    `json:"time_of_day_score"`
+	RoadTypeScore           int    `json:"road_type_score"`
+	ActivityLikelihoodScore int    `json:"activity_likelihood_score"`
+	SegmentSafetyScore      int    `json:"segment_safety_score"`
 }
 
 type AnalyzeRouteResponse struct {
 	Route    RouteSummary    `json:"route"`
 	Segments []SegmentResult `json:"segments"`
-}
-
-type SafetySignals struct {
-	Lighting float64
-	Crowd    float64
 }
