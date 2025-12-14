@@ -1,7 +1,10 @@
 package ml
 
-import "SafeRoute/internal/dto"
+type SafetySignals struct {
+	Lighting float64
+	Crowd    float64
+}
 
 type Client interface {
-	Predict(imageURL string) (dto.SafetySignals, error)
+	Predict(imageURL string) (SafetySignals, error)
 }
