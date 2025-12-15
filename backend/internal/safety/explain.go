@@ -68,7 +68,7 @@ func ExplainRoute(avg RouteAverages) map[string]string {
 	if avg.TimeOfDay < 60 {
 		explain["time_of_day"] = "Night-time increases risk"
 	} else {
-		explain["time_of_day"] = "Day-time travel conditions"
+		explain["time_of_day"] = "Day & evening travel has less risk"
 	}
 
 	// Road type
