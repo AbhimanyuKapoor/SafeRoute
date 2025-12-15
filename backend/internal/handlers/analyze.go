@@ -58,10 +58,17 @@ func AnalyzeRoute(c *gin.Context) {
 
 		modelScore, _ := mlClient.Predict(imgURL)
 		timeScore := safety.TimeOfDayScore(time.Now())
-		activityScore := safety.ActivityLikelihoodScore()
+
 		roadScore, err := safety.ComputeRoadSafetyScore(p, apiKey)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error in ComputeRoadSafetyScore:": err})
+			return
+		}
+
+		// Radius 100 -> Slightly more than immediate environment per segment
+		activityScore, err := safety.ComputeActivityScore(p, 100, apiKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error in ComputeActivityScore:": err})
 			return
 		}
 
