@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -39,8 +38,8 @@ func GetNearbyPlaces(coordinate dto.LatLng, radius int, apiKey string) (NearbyPl
 		return NearbyPlacesResponse{}, err
 	}
 
-	log.Printf("\n\nLat, Lng: %f, %f", coordinate.Lat, coordinate.Lng)
-	log.Printf("\nNearby Places:\n%+v", result)
+	// log.Printf("\n\nLat, Lng: %f, %f", coordinate.Lat, coordinate.Lng)
+	// log.Printf("\nNearby Places:\n%+v", result)
 
 	if result.Status != "OK" && result.Status != "ZERO_RESULTS" {
 		return NearbyPlacesResponse{}, errors.New("places nearby api error")
