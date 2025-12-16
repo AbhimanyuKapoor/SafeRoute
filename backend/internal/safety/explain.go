@@ -75,7 +75,7 @@ func ExplainRoute(avg RouteAverages) map[string]string {
 	switch {
 	case avg.RoadType >= 75:
 		explain["road_type"] = "Mostly main roads"
-	case avg.RoadType >= 55:
+	case avg.RoadType >= 60:
 		explain["road_type"] = "Mostly residential roads"
 	default:
 		explain["road_type"] = "Includes narrow or less-used roads"

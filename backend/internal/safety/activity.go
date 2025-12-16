@@ -3,8 +3,6 @@ package safety
 import (
 	"SafeRoute/internal/dto"
 	"SafeRoute/internal/maps"
-	"log"
-	"strconv"
 )
 
 var activityWeights = map[string]int{
@@ -48,8 +46,8 @@ func ComputeActivityScore(coordinate dto.LatLng, radius int, apiKey string) (int
 
 	for _, place := range places {
 
-		log.Println("\n\nPlace:")
-		log.Printf("\n%+v", place)
+		// log.Println("\n\nPlace:")
+		// log.Printf("\n%+v", place)
 
 		if place.BusinessStatus != "OPERATIONAL" {
 			continue
@@ -61,8 +59,8 @@ func ComputeActivityScore(coordinate dto.LatLng, radius int, apiKey string) (int
 				continue
 			}
 
-			log.Println("\n\nType: " + t)
-			log.Println("\nWeight Ok: " + strconv.Itoa(activityWeights[t]))
+			// log.Println("\n\nType: " + t)
+			// log.Println("\nWeight Ok: " + strconv.Itoa(activityWeights[t]))
 
 			// Time-aware weightage:
 			// open_now == true -> full weight

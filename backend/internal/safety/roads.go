@@ -36,20 +36,48 @@ func ComputeRoadSafetyScore(coordinate dto.LatLng, apiKey string) (int, error) {
 // Safety score (0–100) based on the category of road
 func RoadTypeScore(category RoadCategory) int {
 	switch category {
-	case Highway:
-		return 90
+
 	case MainRoad:
+		// High activity, visibility
 		return 80
+
 	case Residential:
+		// People present, moderate lighting
 		return 65
-	case ServiceRoad:
+
+	case Highway:
+		// Lit but isolated
 		return 55
+
+	case ServiceRoad:
+		// Often isolated
+		return 50
+
 	case UnknownRoad:
 		return 40
+
 	default:
 		return 50
 	}
 }
+
+// Safety score (0–100) based on the category of road
+// func RoadTypeScore(category RoadCategory) int {
+// 	switch category {
+// 	case Highway:
+// 		return 90
+// 	case MainRoad:
+// 		return 80
+// 	case Residential:
+// 		return 65
+// 	case ServiceRoad:
+// 		return 55
+// 	case UnknownRoad:
+// 		return 40
+// 	default:
+// 		return 50
+// 	}
+// }
 
 // Map road type returned from google roads api to known categories
 // func MapGoogleRoadType(googleTypes []string) RoadCategory {
@@ -80,7 +108,8 @@ func InferRoadCategory(name string) RoadCategory {
 	}
 
 	// Residential
-	if strings.Contains(n, "cross") ||
+	if strings.Contains(n, "gali") ||
+		strings.Contains(n, "cross") ||
 		strings.Contains(n, "lane") ||
 		strings.Contains(n, "street") ||
 		strings.Contains(n, "layout") {
