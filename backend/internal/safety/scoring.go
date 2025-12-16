@@ -15,9 +15,9 @@ type SegmentSignals struct {
 func SegmentSafetyScore(s SegmentSignals) int {
 
 	score :=
-		0.30*float64(s.Lighting) +
-			0.25*float64(s.Crowd) +
-			0.20*float64(s.ActivityLikelihood) +
+		0.30*float64(s.ActivityLikelihood) +
+			0.25*float64(s.Lighting) +
+			0.20*float64(s.Crowd) +
 			0.15*float64(s.TimeOfDay) +
 			0.10*float64(s.RoadType)
 

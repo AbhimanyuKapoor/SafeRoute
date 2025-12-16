@@ -14,9 +14,16 @@ type RouteResult struct {
 	Polyline       string
 }
 
-func FetchRoute(from, to dto.LatLng, apiKey string) (*RouteResult, error) {
+func FetchRoute(from, to dto.LatLng, apiKey string) ([]RouteResult, error) {
+	// url := fmt.Sprintf(
+	// 	"https://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&key=%s",
+	// 	from.Lat, from.Lng,
+	// 	to.Lat, to.Lng,
+	// 	apiKey,
+	// )
+
 	url := fmt.Sprintf(
-		"https://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&key=%s",
+		"https://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&mode=walking&alternatives=true&key=%s",
 		from.Lat, from.Lng,
 		to.Lat, to.Lng,
 		apiKey,
@@ -53,12 +60,25 @@ func FetchRoute(from, to dto.LatLng, apiKey string) (*RouteResult, error) {
 		return nil, fmt.Errorf("no routes found")
 	}
 
-	route := data.Routes[0]
-	leg := route.Legs[0]
+	results := make([]RouteResult, 0, len(data.Routes))
 
-	return &RouteResult{
-		DistanceMeters: leg.Distance.Value,
-		DurationSec:    leg.Duration.Value,
-		Polyline:       route.OverviewPolyline.Points,
-	}, nil
+	for _, route := range data.Routes {
+		if len(route.Legs) == 0 {
+			continue
+		}
+
+		leg := route.Legs[0]
+
+		results = append(results, RouteResult{
+			DistanceMeters: leg.Distance.Value,
+			DurationSec:    leg.Duration.Value,
+			Polyline:       route.OverviewPolyline.Points,
+		})
+	}
+
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no valid routes found")
+	}
+
+	return results, nil
 }
