@@ -1,0 +1,31 @@
+FROM python:3.10-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# System deps for Pillow/opencv/ffmpeg
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6 \
+    libjpeg-dev \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --upgrade pip
+# Optional: install CPU-specific torch wheel if you want a pinned CPU build:
+# RUN pip install --index-url https://download.pytorch.org/whl/cpu torch
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy app code and models (models can be large; consider mounting instead)
+COPY . .
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
