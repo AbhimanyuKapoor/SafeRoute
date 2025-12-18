@@ -8,8 +8,7 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:location/location.dart';
 import 'package:saferoute/dto/route_request.dart';
 import 'package:saferoute/dto/route_response.dart';
-import 'package:saferoute/utilities/route_info_card.dart';
-import 'package:saferoute/views/login_view.dart';
+import 'package:saferoute/utilities/display_cards/route_info_card.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -133,7 +132,7 @@ class _MapViewState extends State<MapView> {
 
                 // Recenter button
                 Positioned(
-                  bottom: _selectedRoute == null ? 24 : 230,
+                  bottom: 24,
                   left: 16,
                   child: Column(
                     children: [
