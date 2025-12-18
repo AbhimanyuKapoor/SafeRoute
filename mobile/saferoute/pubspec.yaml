@@ -44,6 +44,8 @@ dependencies:
   http: ^1.6.0
   google_places_flutter: ^2.1.1
   flutter_dotenv: ^6.0.0
+  bloc: ^9.1.0
+  flutter_bloc: ^9.1.1
 
 dev_dependencies:
   flutter_test:
