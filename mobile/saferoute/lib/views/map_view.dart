@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -8,6 +9,9 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:location/location.dart';
 import 'package:saferoute/dto/route_request.dart';
 import 'package:saferoute/dto/route_response.dart';
+import 'package:saferoute/services/auth/bloc/auth_bloc.dart';
+import 'package:saferoute/services/auth/bloc/auth_event.dart';
+import 'package:saferoute/utilities/dialogs/logout_dialog.dart';
 import 'package:saferoute/utilities/display_cards/route_info_card.dart';
 
 class MapView extends StatefulWidget {
@@ -144,7 +148,16 @@ class _MapViewState extends State<MapView> {
                       const SizedBox(height: 5),
                       FloatingActionButton(
                         heroTag: 'logout',
-                        onPressed: () {},
+                        onPressed: () async {
+                          final shouldLogout = await (showLogoutDialog(
+                            context,
+                          ));
+                          if (shouldLogout) {
+                            context.read<AuthBloc>().add(
+                              const AuthEventLogout(),
+                            );
+                          }
+                        },
                         child: const Icon(Icons.logout),
                       ),
                     ],

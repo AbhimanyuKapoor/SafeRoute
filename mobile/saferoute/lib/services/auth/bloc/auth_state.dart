@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart' show immutable;
 import 'package:saferoute/services/auth/auth_user.dart';
 
