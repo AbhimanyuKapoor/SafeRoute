@@ -1,0 +1,20 @@
+# Web server
+fastapi
+uvicorn
+
+# Core ML
+torch
+numpy
+scikit-learn
+joblib
+
+# Vision
+ultralytics
+transformers
+Pillow
+opencv-python-headless
+
+# Utils
+pydantic
+
+
