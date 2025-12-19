@@ -1,34 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:saferoute/services/auth/auth_exceptions.dart';
 import 'package:saferoute/services/auth/bloc/auth_bloc.dart';
 import 'package:saferoute/services/auth/bloc/auth_event.dart';
 import 'package:saferoute/services/auth/bloc/auth_state.dart';
 import 'package:saferoute/utilities/dialogs/error_dialog.dart';
+import 'package:saferoute/utilities/dialogs/password_reset_email_sent_dialog.dart';
 
-class RegisterView extends StatefulWidget {
-  const RegisterView({super.key});
+class ForgotPasswordView extends StatefulWidget {
+  const ForgotPasswordView({super.key});
 
   @override
-  State<RegisterView> createState() => _RegisterViewState();
+  State<ForgotPasswordView> createState() => _ForgotPasswordViewState();
 }
 
-class _RegisterViewState extends State<RegisterView> {
-  late final TextEditingController _email;
-  late final TextEditingController _password;
-  bool _isPasswordVisible = false;
+class _ForgotPasswordViewState extends State<ForgotPasswordView> {
+  late final TextEditingController _controller;
 
   @override
   void initState() {
-    _email = TextEditingController();
-    _password = TextEditingController();
+    _controller = TextEditingController();
     super.initState();
   }
 
   @override
   void dispose() {
-    _email.dispose();
-    _password.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -36,15 +32,16 @@ class _RegisterViewState extends State<RegisterView> {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) async {
-        if (state is AuthStateRegsitering) {
-          if (state.exception is WeakPasswordAuthException) {
-            await showErrorDialog(context, 'Weak Password');
-          } else if (state.exception is EmailAlreadyInUseAuthException) {
-            await showErrorDialog(context, 'Email AlreadyInUseException');
-          } else if (state.exception is GenericAuthException) {
-            await showErrorDialog(context, 'Failed to Register');
-          } else if (state.exception is InvalidEmailAuthException) {
-            await showErrorDialog(context, 'Invalid email');
+        if (state is AuthStateForgotPassword) {
+          if (state.hasSentEmail) {
+            _controller.clear();
+            await showPasswordResetSentDialog(context);
+          }
+          if (state.exception != null) {
+            await showErrorDialog(
+              context,
+              'We could not process your request, Please make sure you are a registered user by going back one step',
+            );
           }
         }
       },
@@ -66,11 +63,7 @@ class _RegisterViewState extends State<RegisterView> {
               ),
             ),
             // Map-like pattern overlay
-            Positioned.fill(
-              child: CustomPaint(
-                painter: MapPatternPainter(),
-              ),
-            ),
+            Positioned.fill(child: CustomPaint(painter: MapPatternPainter())),
             // Content
             SafeArea(
               child: Center(
@@ -94,24 +87,24 @@ class _RegisterViewState extends State<RegisterView> {
                           ],
                         ),
                         child: Icon(
-                          Icons.navigation_rounded,
+                          Icons.lock_reset_rounded,
                           size: 60,
                           color: Color(0xFF4A90E2),
                         ),
                       ),
                       SizedBox(height: 24),
                       Text(
-                        'SafeRoute',
+                        'Forgot Password?',
                         style: TextStyle(
-                          fontSize: 42,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF2C3E50),
-                          letterSpacing: -1,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Your journey, secured',
+                        'No worries, we\'ll help you reset it',
                         style: TextStyle(
                           fontSize: 16,
                           color: Color(0xFF7F8C8D),
@@ -119,8 +112,8 @@ class _RegisterViewState extends State<RegisterView> {
                         ),
                       ),
                       SizedBox(height: 48),
-                      
-                      // Register Form Card
+
+                      // Reset Password Form Card
                       Container(
                         constraints: BoxConstraints(maxWidth: 400),
                         padding: EdgeInsets.all(32),
@@ -138,77 +131,58 @@ class _RegisterViewState extends State<RegisterView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              'Create Account',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2C3E50),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Sign up to get started',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF7F8C8D),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 32),
-                            
-                            // Email Field
-                            TextField(
-                              controller: _email,
-                              enableSuggestions: false,
-                              autocorrect: false,
-                              keyboardType: TextInputType.emailAddress,
-                              style: TextStyle(fontSize: 15, color: Color(0xFF2C3E50)),
-                              decoration: InputDecoration(
-                                labelText: 'Email',
-                                hintText: 'Enter your email',
-                                prefixIcon: Icon(Icons.email_outlined, size: 22),
-                                filled: true,
-                                fillColor: Color(0xFFF7F9FC),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide.none,
+                            // Info Text
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFF7F9FC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Color(
+                                    0xFF4A90E2,
+                                  ).withValues(alpha: 0.2),
+                                  width: 1,
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: Color(0xFFE8ECF1), width: 1.5),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: Color(0xFF4A90E2), width: 2),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
                               ),
-                            ),
-                            SizedBox(height: 20),
-                            
-                            // Password Field
-                            TextField(
-                              controller: _password,
-                              obscureText: !_isPasswordVisible,
-                              enableSuggestions: false,
-                              autocorrect: false,
-                              style: TextStyle(fontSize: 15, color: Color(0xFF2C3E50)),
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                hintText: 'Enter your password',
-                                prefixIcon: Icon(Icons.lock_outline, size: 22),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Color(0xFF4A90E2),
                                     size: 22,
                                   ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isPasswordVisible = !_isPasswordVisible;
-                                    });
-                                  },
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Enter your email and we\'ll send you a password reset link.',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF2C3E50),
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 24),
+
+                            // Email Field
+                            TextField(
+                              controller: _controller,
+                              keyboardType: TextInputType.emailAddress,
+                              autocorrect: false,
+                              autofocus: true,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Color(0xFF2C3E50),
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                hintText: 'Your email address',
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  size: 22,
                                 ),
                                 filled: true,
                                 fillColor: Color(0xFFF7F9FC),
@@ -218,24 +192,32 @@ class _RegisterViewState extends State<RegisterView> {
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: Color(0xFFE8ECF1), width: 1.5),
+                                  borderSide: BorderSide(
+                                    color: Color(0xFFE8ECF1),
+                                    width: 1.5,
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: Color(0xFF4A90E2), width: 2),
+                                  borderSide: BorderSide(
+                                    color: Color(0xFF4A90E2),
+                                    width: 2,
+                                  ),
                                 ),
-                                contentPadding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 18,
+                                  horizontal: 16,
+                                ),
                               ),
                             ),
-                            SizedBox(height: 32),
-                            
-                            // Register Button
+                            SizedBox(height: 24),
+
+                            // Send Reset Link Button
                             ElevatedButton(
-                              onPressed: () async {
-                                final email = _email.text;
-                                final password = _password.text;
+                              onPressed: () {
+                                final email = _controller.text;
                                 context.read<AuthBloc>().add(
-                                  AuthEventRegsiter(email, password),
+                                  AuthEventForgotPassword(email: email),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -249,7 +231,7 @@ class _RegisterViewState extends State<RegisterView> {
                                 shadowColor: Colors.transparent,
                               ),
                               child: Text(
-                                'Register',
+                                'Send Reset Link',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -257,38 +239,37 @@ class _RegisterViewState extends State<RegisterView> {
                                 ),
                               ),
                             ),
-                            SizedBox(height: 24),
-                            
-                            // Login Link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Already registered? ",
-                                  style: TextStyle(
-                                    color: Color(0xFF7F8C8D),
-                                    fontSize: 14,
+                            SizedBox(height: 16),
+
+                            // Back to Login Button
+                            TextButton(
+                              onPressed: () {
+                                context.read<AuthBloc>().add(
+                                  const AuthEventLogout(),
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.arrow_back,
+                                    size: 18,
+                                    color: Color(0xFF4A90E2),
                                   ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    context.read<AuthBloc>().add(const AuthEventLogout());
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size(0, 0),
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                    'Login Here',
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Back to Login',
                                     style: TextStyle(
                                       color: Color(0xFF4A90E2),
                                       fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -329,10 +310,26 @@ class MapPatternPainter extends CustomPainter {
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
-    canvas.drawLine(Offset(size.width * 0.2, 0), Offset(size.width * 0.2, size.height), roadPaint);
-    canvas.drawLine(Offset(size.width * 0.6, 0), Offset(size.width * 0.6, size.height), roadPaint);
-    canvas.drawLine(Offset(0, size.height * 0.3), Offset(size.width, size.height * 0.3), roadPaint);
-    canvas.drawLine(Offset(0, size.height * 0.7), Offset(size.width, size.height * 0.7), roadPaint);
+    canvas.drawLine(
+      Offset(size.width * 0.2, 0),
+      Offset(size.width * 0.2, size.height),
+      roadPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.6, 0),
+      Offset(size.width * 0.6, size.height),
+      roadPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 0.3),
+      Offset(size.width, size.height * 0.3),
+      roadPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 0.7),
+      Offset(size.width, size.height * 0.7),
+      roadPaint,
+    );
   }
 
   @override

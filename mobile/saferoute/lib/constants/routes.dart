@@ -1,0 +1,1 @@
+const mapViewRoute = '/map-view/';

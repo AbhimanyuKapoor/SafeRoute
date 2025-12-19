@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -8,6 +9,9 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:location/location.dart';
 import 'package:saferoute/dto/route_request.dart';
 import 'package:saferoute/dto/route_response.dart';
+import 'package:saferoute/services/auth/bloc/auth_bloc.dart';
+import 'package:saferoute/services/auth/bloc/auth_event.dart';
+import 'package:saferoute/utilities/dialogs/logout_dialog.dart';
 import 'package:saferoute/utilities/display_cards/route_info_card.dart';
 
 class MapView extends StatefulWidget {
@@ -85,6 +89,7 @@ class _MapViewState extends State<MapView> {
                     _mapController.complete(controller);
                   },
                 ),
+
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -92,10 +97,20 @@ class _MapViewState extends State<MapView> {
                   left: 12,
                   right: 12,
                   child: Material(
-                    elevation: 6,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
+                    color: Colors.transparent,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 30,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -107,7 +122,7 @@ class _MapViewState extends State<MapView> {
                               fromLocation = latLng;
                             },
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           _buildPlacesField(
                             controller: _toController,
                             hint: 'To',
@@ -116,12 +131,33 @@ class _MapViewState extends State<MapView> {
                               toLocation = latLng;
                             },
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
+
+                          // Get Routes Button (Login-style)
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: _onNavigatePressed,
-                              child: const Text('Get Routes'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4A90E2),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                              ),
+                              child: const Text(
+                                'Get Routes',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -130,22 +166,94 @@ class _MapViewState extends State<MapView> {
                   ),
                 ),
 
-                // Recenter button
+                // Positioned(
+                //   bottom: 24,
+                //   left: 16,
+                //   child: Column(
+                //     children: [
+                //       FloatingActionButton(
+                //         heroTag: 'recenter',
+                //         onPressed: _recenterMap,
+                //         child: const Icon(Icons.my_location),
+                //       ),
+                //       const SizedBox(height: 10),
+                //       FloatingActionButton(
+                //         heroTag: 'logout',
+                //         onPressed: () async {
+                //           final shouldLogout = await (showLogoutDialog(
+                //             context,
+                //           ));
+                //           if (shouldLogout) {
+                //             context.read<AuthBloc>().add(
+                //               const AuthEventLogout(),
+                //             );
+                //           }
+                //         },
+                //         child: const Icon(Icons.logout),
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 Positioned(
                   bottom: 24,
                   left: 16,
                   child: Column(
                     children: [
-                      FloatingActionButton(
-                        heroTag: 'recenter',
-                        onPressed: _recenterMap,
-                        child: const Icon(Icons.my_location),
+                      // Recenter Button
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: FloatingActionButton(
+                          heroTag: 'recenter',
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF4A90E2),
+                          elevation: 0,
+                          onPressed: _recenterMap,
+                          child: const Icon(Icons.my_location),
+                        ),
                       ),
-                      const SizedBox(height: 5),
-                      FloatingActionButton(
-                        heroTag: 'logout',
-                        onPressed: () {},
-                        child: const Icon(Icons.logout),
+
+                      const SizedBox(height: 14),
+
+                      // Logout Button
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: FloatingActionButton(
+                          heroTag: 'logout',
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(
+                            0xFFE74C3C,
+                          ), // subtle danger red
+                          elevation: 0,
+                          onPressed: () async {
+                            final shouldLogout = await (showLogoutDialog(
+                              context,
+                            ));
+                            if (shouldLogout) {
+                              context.read<AuthBloc>().add(
+                                const AuthEventLogout(),
+                              );
+                            }
+                          },
+                          child: const Icon(Icons.logout),
+                        ),
                       ),
                     ],
                   ),
