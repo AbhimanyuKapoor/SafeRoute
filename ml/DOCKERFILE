@@ -1,31 +1,29 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
-# System deps for Pillow/opencv/ffmpeg
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libglib2.0-0 \
-    libsm6 \
-    libxrender1 \
-    libxext6 \
-    libjpeg-dev \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8080
 
 WORKDIR /app
 
-COPY requirements.txt .
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ffmpeg \
+    libglvnd0 \
+    libglib2.0-0 \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip
-# Optional: install CPU-specific torch wheel if you want a pinned CPU build:
-# RUN pip install --index-url https://download.pytorch.org/whl/cpu torch
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt ./requirements.txt
 
-# Copy app code and models (models can be large; consider mounting instead)
-COPY . .
+# Install Python deps (expects CPU-friendly wheels in requirements.txt)
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 8000
+# Copy application and model files
+COPY . /app
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8080
+
+# Use Gunicorn with Uvicorn worker to serve FastAPI app `main:app`
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

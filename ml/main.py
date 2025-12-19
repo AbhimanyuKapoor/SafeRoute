@@ -37,7 +37,6 @@ seg_model.eval()
 
 class PredictRequest(BaseModel):
     image_base64: str
-    time_of_day: str = "day"
 
 #taking base64 converting to bytes then to RGB then to numpy array
 def decode_image(image_base64: str)->np.ndarray:
@@ -109,13 +108,10 @@ def extract_segmentation_features(img_pil: Image.Image)->dict:
         "vegetation_ratio": (seg_pred == 8).sum() / total_pixels,
     }
 
-def adjust_for_time(score: float, time_of_day: str) -> float:
-    if time_of_day.lower() == "night":
-        return score * 0.85
-    return score
 
 
-def run_pipeline(img_np: np.ndarray, time_of_day: str) -> dict:
+
+def run_pipeline(img_np: np.ndarray) -> dict:
     img_pil = Image.fromarray(img_np)
 
     yolo_feats = extract_yolo_features(img_np)
@@ -147,23 +143,15 @@ def run_pipeline(img_np: np.ndarray, time_of_day: str) -> dict:
     crowd_score = np.clip(crowd_model.predict(crowd_X)[0], 0, 1)
     lighting_score = np.clip(lighting_model.predict(lighting_X)[0], 0, 1)
 
-    crowd_score = adjust_for_time(crowd_score, time_of_day)
-    lighting_score = adjust_for_time(lighting_score, time_of_day)
-
-    safety_score = (
-        0.5 * lighting_score +
-        0.4 * crowd_score
-    )  
+ 
     
     return {
         "crowd_score": float(crowd_score),
         "lighting_score": float(lighting_score),
-        "safety_score": float(safety_score),
     }
 
 
 @app.post("/predict")
 def predict(request: PredictRequest):
     img_np = decode_image(request.image_base64)
-    return run_pipeline(img_np, request.time_of_day)
-
+    return run_pipeline(img_np)
