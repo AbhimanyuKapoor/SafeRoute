@@ -6,5 +6,5 @@ type SafetySignals struct {
 }
 
 type Client interface {
-	Predict(imageURL string) (SafetySignals, error)
+	Predict(imageBase64 string) (SafetySignals, error)
 }

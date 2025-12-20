@@ -5,6 +5,11 @@ type LatLng struct {
 	Lng float64 `json:"lng"`
 }
 
+type Segment struct {
+	Position   LatLng `json:"position"`
+	HeadingRef LatLng `json:"heading_ref"`
+}
+
 type AnalyzeRouteRequest struct {
 	From LatLng `json:"from"`
 	To   LatLng `json:"to"`

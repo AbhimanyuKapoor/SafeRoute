@@ -14,13 +14,6 @@ type RoadsResponse struct {
 	} `json:"snappedPoints"`
 }
 
-// type PlaceDetailsResponse struct {
-// 	Result struct {
-// 		Types []string `json:"types"`
-// 	} `json:"result"`
-// 	Status string `json:"status"`
-// }
-
 type PlaceDetailsResponse struct {
 	Result struct {
 		AddressComponents []struct {
@@ -104,29 +97,3 @@ func GetRoadNameFromPlaceID(placeID string, apiKey string) (string, error) {
 
 	return "", errors.New("road name not found in place details")
 }
-
-// Getting the road type from the determined place ID
-// func GetRoadTypesFromPlaceID(placeID string, apiKey string) ([]string, error) {
-// 	url := fmt.Sprintf(
-// 		"https://maps.googleapis.com/maps/api/place/details/json?place_id=%s&fields=types&key=%s",
-// 		placeID,
-// 		apiKey,
-// 	)
-
-// 	resp, err := http.Get(url)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer resp.Body.Close()
-
-// 	var result PlaceDetailsResponse
-// 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-// 		return nil, err
-// 	}
-
-// 	if result.Status != "OK" {
-// 		return nil, errors.New("places api error")
-// 	}
-
-// 	return result.Result.Types, nil
-// }

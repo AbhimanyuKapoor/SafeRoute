@@ -50,27 +50,39 @@ func AnalyzeRoute(c *gin.Context) {
 		mlClient := ml.NewMockClient()
 
 		// Calculating segment wise safety scores
-		for _, p := range segments {
+		for i, p := range segments {
 
-			imgURL := maps.BuildStreetViewURL(
-				dto.LatLng{
-					Lat: p.Lat,
-					Lng: p.Lng,
-				},
-				apiKey,
+			imgURL := maps.BuildStreetViewURL(p, apiKey, i == 0)
+
+			var (
+				modelScore ml.SafetySignals
+				hasVision  bool
 			)
 
-			modelScore, _ := mlClient.Predict(imgURL)
+			// Image fetch
+			imgBase64, err := utils.FetchImageAsBase64(imgURL)
+			if err != nil {
+				hasVision = false
+			} else {
+				// Model inference
+				modelScore, err = mlClient.Predict(imgBase64)
+				if err != nil {
+					hasVision = false
+				} else {
+					hasVision = true
+				}
+			}
+
 			timeScore := safety.TimeOfDayScore(time.Now())
 
-			roadScore, err := safety.ComputeRoadSafetyScore(p, apiKey)
+			roadScore, err := safety.ComputeRoadSafetyScore(p.Position, apiKey)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error in ComputeRoadSafetyScore:": err})
 				return
 			}
 
 			// Radius 100 -> Slightly more than immediate environment per segment
-			activityScore, err := safety.ComputeActivityScore(p, 100, apiKey)
+			activityScore, err := safety.ComputeActivityScore(p.Position, 100, apiKey)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error in ComputeActivityScore:": err})
 				return
@@ -78,25 +90,37 @@ func AnalyzeRoute(c *gin.Context) {
 
 			// Segment safety indicators
 			signals := safety.SegmentSignals{
-				Lighting:           int(modelScore.Lighting * 100),
-				Crowd:              int(modelScore.Crowd * 100),
 				ActivityLikelihood: activityScore,
 				TimeOfDay:          timeScore,
 				RoadType:           roadScore,
+				HasVision:          hasVision,
 			}
-			segmentSignals = append(segmentSignals, signals)
+
+			if hasVision {
+				signals.Lighting = int(modelScore.Lighting * 100)
+				signals.Crowd = int(modelScore.Crowd * 100)
+			}
 
 			// Segment score based on safety indicators
 			segmentScore := safety.SegmentSafetyScore(signals)
+
+			segmentSignals = append(segmentSignals, signals)
 			segmentScores = append(segmentScores, segmentScore)
+
+			lighting := 0
+			crowd := 0
+			if hasVision {
+				lighting = signals.Lighting
+				crowd = signals.Crowd
+			}
 
 			segmentResults = append(segmentResults, dto.SegmentResult{
 				Coordinate: dto.LatLng{
-					Lat: p.Lat,
-					Lng: p.Lng,
+					Lat: p.Position.Lat,
+					Lng: p.Position.Lng,
 				},
-				LightingScore:           int(modelScore.Lighting * 100),
-				CrowdScore:              int(modelScore.Crowd * 100),
+				LightingScore:           lighting,
+				CrowdScore:              crowd,
 				TimeOfDayScore:          timeScore,
 				RoadTypeScore:           roadScore,
 				ActivityLikelihoodScore: activityScore,
