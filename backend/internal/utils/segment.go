@@ -22,14 +22,23 @@ func distance(a, b dto.LatLng) float64 {
 }
 
 // Appends points every `stepMeters` along the route
-func SampleRoute(points []dto.LatLng, stepMeters float64) []dto.LatLng {
+func SampleRoute(points []dto.LatLng, stepMeters float64) []dto.Segment {
 
-	if len(points) == 0 {
-		return nil
+	// Fallback
+	if len(points) == 1 {
+		return []dto.Segment{
+			{
+				Position:   points[0],
+				HeadingRef: points[0],
+			},
+		}
 	}
 
-	var sampled []dto.LatLng
-	sampled = append(sampled, points[0])
+	var sampled []dto.Segment
+	sampled = append(sampled, dto.Segment{
+		Position:   points[0],
+		HeadingRef: points[1],
+	})
 
 	accumulated := 0.0
 
@@ -38,15 +47,23 @@ func SampleRoute(points []dto.LatLng, stepMeters float64) []dto.LatLng {
 		accumulated += d
 
 		if accumulated >= stepMeters {
-			sampled = append(sampled, points[i])
-			accumulated = 0.0
+			sampled = append(sampled, dto.Segment{
+				Position:   points[i],
+				HeadingRef: points[i-1],
+			})
+			accumulated -= stepMeters
 		}
 	}
 
 	// Last point should be included
 	last := points[len(points)-1]
-	if sampled[len(sampled)-1] != last {
-		sampled = append(sampled, last)
+	prev := points[len(points)-2]
+
+	if sampled[len(sampled)-1].Position != last {
+		sampled = append(sampled, dto.Segment{
+			Position:   last,
+			HeadingRef: prev,
+		})
 	}
 
 	return sampled

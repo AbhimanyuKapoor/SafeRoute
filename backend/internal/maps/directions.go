@@ -15,12 +15,6 @@ type RouteResult struct {
 }
 
 func FetchRoute(from, to dto.LatLng, apiKey string) ([]RouteResult, error) {
-	// url := fmt.Sprintf(
-	// 	"https://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&key=%s",
-	// 	from.Lat, from.Lng,
-	// 	to.Lat, to.Lng,
-	// 	apiKey,
-	// )
 
 	url := fmt.Sprintf(
 		"https://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&mode=walking&alternatives=true&key=%s",

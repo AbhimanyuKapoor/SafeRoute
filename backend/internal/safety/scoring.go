@@ -10,18 +10,39 @@ type SegmentSignals struct {
 	ActivityLikelihood int
 	TimeOfDay          int
 	RoadType           int
+
+	// image + model success
+	HasVision bool
 }
 
 func SegmentSafetyScore(s SegmentSignals) int {
+	var score float64
+	var weightSum float64
 
-	score :=
-		0.30*float64(s.ActivityLikelihood) +
-			0.25*float64(s.Lighting) +
-			0.20*float64(s.Crowd) +
-			0.15*float64(s.TimeOfDay) +
-			0.10*float64(s.RoadType)
+	// Always available
+	score += 0.30 * float64(s.ActivityLikelihood)
+	weightSum += 0.30
 
-	return int(math.Round(score))
+	score += 0.15 * float64(s.TimeOfDay)
+	weightSum += 0.15
+
+	score += 0.10 * float64(s.RoadType)
+	weightSum += 0.10
+
+	// Vision-based (conditional)
+	if s.HasVision {
+		score += 0.25 * float64(s.Lighting)
+		weightSum += 0.25
+
+		score += 0.20 * float64(s.Crowd)
+		weightSum += 0.20
+	}
+
+	if weightSum == 0 {
+		return 0
+	}
+
+	return int(math.Round(score / weightSum))
 }
 
 func RouteSafetyScore(segmentScores []int) int {
