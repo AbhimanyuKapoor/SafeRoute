@@ -16,5 +16,5 @@ opencv-python-headless
 
 # Utils
 pydantic
-
+pandas
 
