@@ -49,9 +49,13 @@ func ExplainRoute(avg RouteAverages) map[string]string {
 
 	if avg.VisionCoverage < 0.5 {
 		explain["vision"] = "Limited visual data available for this route"
+		explain["lighting"] = ""
+		explain["crowd"] = ""
 	}
 
 	if avg.VisionCoverage >= 0.5 {
+		explain["vision"] = ""
+
 		switch {
 		case avg.Lighting >= 75:
 			explain["lighting"] = "Mostly well-lit streets"
