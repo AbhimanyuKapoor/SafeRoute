@@ -13,6 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Maximum allowed route length
+const MaxRouteDistanceMeters = 10000
+
 func AnalyzeRoute(c *gin.Context) {
 
 	var req dto.AnalyzeRouteRequest
@@ -38,6 +41,11 @@ func AnalyzeRoute(c *gin.Context) {
 	var resp []dto.AnalyzeRouteResponse
 
 	for _, route := range routes {
+
+		if route.DistanceMeters > MaxRouteDistanceMeters {
+			continue
+		}
+
 		// Getting {Lat, Lng} points from google maps polyline
 		points := utils.DecodePolyline(route.Polyline)
 
@@ -146,6 +154,13 @@ func AnalyzeRoute(c *gin.Context) {
 			},
 			Segments: segmentResults,
 		})
+	}
+
+	if len(resp) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "All available routes exceed the maximum supported distance (10 km)",
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, resp)

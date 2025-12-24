@@ -6,7 +6,6 @@ import io
 import numpy as np
 import torch
 import joblib
-import pandas as pd
 from PIL import Image
 
 from ultralytics import YOLO
@@ -102,24 +101,25 @@ def run_pipeline(img_np: np.ndarray) -> dict:
         **extract_segmentation_features(img_pil)
     }
 
-    crowd_X = pd.DataFrame([{
-        "person_count": features["person_count"],
-        "vehicle_count": features["vehicle_count"],
-        "any_person_present": features["any_person_present"],
-        "any_vehicle_present": features["any_vehicle_present"],
-        "sidewalk_ratio": features["sidewalk_ratio"],
-        "building_ratio": features["building_ratio"],
-        "object_diversity": features["object_diversity"],
-    }])
+    # Prepare inputs as NumPy arrays (shape: 1 x n_features)
+    crowd_X = np.array([[
+        features["person_count"],
+        features["vehicle_count"],
+        features["any_person_present"],
+        features["any_vehicle_present"],
+        features["sidewalk_ratio"],
+        features["building_ratio"],
+        features["object_diversity"],
+    ]])
 
-    lighting_X = pd.DataFrame([{
-        "traffic_light_count": features["traffic_light_count"],
-        "pole_ratio": features["pole_ratio"],
-        "building_ratio": features["building_ratio"],
-        "sidewalk_ratio": features["sidewalk_ratio"],
-        "total_object_count": features["total_object_count"],
-        "vegetation_ratio": features["vegetation_ratio"],
-    }])
+    lighting_X = np.array([[
+        features["traffic_light_count"],
+        features["pole_ratio"],
+        features["building_ratio"],
+        features["sidewalk_ratio"],
+        features["total_object_count"],
+        features["vegetation_ratio"],
+    ]])
 
     crowd_raw = crowd_model.predict(crowd_X)[0]
     light_raw = lighting_model.predict(lighting_X)[0]
