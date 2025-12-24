@@ -5,10 +5,18 @@ class RouteInfoCard extends StatelessWidget {
   final RouteResponse route;
   final Color riskColor;
 
-  const RouteInfoCard({super.key, required this.route, required this.riskColor});
+  const RouteInfoCard({
+    super.key,
+    required this.route,
+    required this.riskColor,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final crowd = route.explanations['crowd'] ?? "";
+    final lighting = route.explanations['lighting'] ?? "";
+    final vision = route.explanations['vision'] ?? "";
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -86,11 +94,7 @@ class RouteInfoCard extends StatelessWidget {
                     value: '${route.distance} km',
                   ),
                 ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.grey.shade200,
-                ),
+                Container(width: 1, height: 40, color: Colors.grey.shade200),
                 Expanded(
                   child: _StatItem(
                     icon: Icons.schedule_outlined,
@@ -105,10 +109,7 @@ class RouteInfoCard extends StatelessWidget {
           // Divider
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Container(
-              height: 1,
-              color: Colors.grey.shade100,
-            ),
+            child: Container(height: 1, color: Colors.grey.shade100),
           ),
 
           // Route Details
@@ -134,21 +135,39 @@ class RouteInfoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 _DetailRow(
-                  icon: Icons.groups_outlined,
-                  label: 'Crowd',
-                  value: route.explanations['crowd'] ?? 'N/A',
-                ),
-                const SizedBox(height: 10),
-                _DetailRow(
-                  icon: Icons.light_mode_outlined,
-                  label: 'Lighting',
-                  value: route.explanations['lighting'] ?? 'N/A',
-                ),
-                const SizedBox(height: 10),
-                _DetailRow(
                   icon: Icons.map_outlined,
                   label: 'Road Type',
                   value: route.explanations['road_type'] ?? 'N/A',
+                ),
+                const SizedBox(height: 10),
+                _DetailRow(
+                  icon: Icons.timelapse,
+                  label: 'Time of Day',
+                  value: route.explanations['time_of_day'] ?? 'N/A',
+                ),
+                if(crowd.isNotEmpty)
+                const SizedBox(height: 10),
+                if(crowd.isNotEmpty)
+                _DetailRow(
+                  icon: Icons.groups_outlined,
+                  label: 'Crowd',
+                  value: crowd,
+                ),
+                if(lighting.isNotEmpty)
+                const SizedBox(height: 10),
+                if(lighting.isNotEmpty)
+                _DetailRow(
+                  icon: Icons.light_mode_outlined,
+                  label: 'Lighting',
+                  value: lighting,
+                ),
+                if(lighting.isEmpty && crowd.isEmpty)
+                const SizedBox(height: 10),
+                if(lighting.isEmpty && crowd.isEmpty)
+                _DetailRow(
+                  icon: Icons.visibility_off_outlined,
+                  label: 'Vision',
+                  value: vision,
                 ),
               ],
             ),

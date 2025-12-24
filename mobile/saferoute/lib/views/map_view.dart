@@ -464,11 +464,16 @@ class _MapViewState extends State<MapView> {
 
       await _fitCameraToPoints(from, to);
     } catch (e) {
-      print("FAILED TO FETCH ROUTES: $e");
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : 'Something went wrong';
+
+      print('FAILED TO FETCH ROUTES: $message');
+
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to fetch routes: $e')));
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     }
   }
