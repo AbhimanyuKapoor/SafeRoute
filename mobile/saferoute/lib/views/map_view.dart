@@ -382,8 +382,8 @@ class _MapViewState extends State<MapView> {
     required LatLng from,
     required LatLng to,
   }) async {
-    try {
       LoadingScreen().show(context: context, text: 'Fetching Routes...');
+    try {
 
       _showFromToMarkers(from: from, to: to);
 
@@ -404,6 +404,7 @@ class _MapViewState extends State<MapView> {
       _drawPolylines(routes);
       await _fitCameraToPoints(from, to);
     } catch (e) {
+      LoadingScreen().hide();
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Something went wrong';
