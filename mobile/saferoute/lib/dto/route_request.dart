@@ -2,13 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:saferoute/dto/route_response.dart';
-import 'package:saferoute/mock/mock_routes.dart';
-import 'package:saferoute/services/auth/auth_service.dart';
-import 'package:saferoute/services/auth/bloc/auth_bloc.dart';
 
 Future<List<RouteResponse>> getRoutes(LatLng from, LatLng to) async {
 final jwt = await FirebaseAuth.instance.currentUser!.getIdToken();

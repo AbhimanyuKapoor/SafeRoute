@@ -383,10 +383,6 @@ class _MapViewState extends State<MapView> {
     required LatLng to,
   }) async {
     try {
-      print(
-        'Fetching routes from ${from.latitude},${from.longitude} to ${to.latitude},${to.longitude}',
-      );
-
       LoadingScreen().show(context: context, text: 'Fetching Routes...');
 
       _showFromToMarkers(from: from, to: to);
@@ -405,15 +401,12 @@ class _MapViewState extends State<MapView> {
         return;
       }
 
-      print('Received ${routes.length} routes');
-
       _drawPolylines(routes);
       await _fitCameraToPoints(from, to);
     } catch (e) {
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Something went wrong';
-      print('FAILED TO FETCH ROUTES: $message');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -495,13 +488,8 @@ class _MapViewState extends State<MapView> {
       try {
         final points = decodeEncodedPolyline(routes[i].polyline);
         if (points.isEmpty) {
-          print('Warning: Route $i has no points');
           continue;
         }
-
-        print(
-          'Drawing route $i with ${points.length} points, color: ${routes[i].riskLevel}',
-        );
 
         newPolylines.add(
           Polyline(
@@ -519,7 +507,7 @@ class _MapViewState extends State<MapView> {
           ),
         );
       } catch (e) {
-        print('Error drawing route $i: $e');
+        //encountered exception
       }
     }
 
@@ -527,8 +515,6 @@ class _MapViewState extends State<MapView> {
       _routeDrawn = true;
       _polylines = newPolylines;
     });
-
-    print('Total polylines drawn: ${_polylines.length}');
   }
 
   void _onRouteTapped(RouteResponse route) {
@@ -552,7 +538,6 @@ class _MapViewState extends State<MapView> {
       final decodedPoints = PolylinePoints.decodePolyline(encodedPolyline);
       return decodedPoints.map((p) => LatLng(p.latitude, p.longitude)).toList();
     } catch (e) {
-      print('Error decoding polyline: $e');
       return [];
     }
   }

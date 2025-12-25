@@ -49,7 +49,7 @@ class __VerifyEmailViewState extends State<VerifyEmailView> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 20,
                             offset: Offset(0, 10),
                           ),
@@ -87,11 +87,11 @@ class __VerifyEmailViewState extends State<VerifyEmailView> {
                       constraints: BoxConstraints(maxWidth: 400),
                       padding: EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withValues(alpha: 0.95),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 30,
                             offset: Offset(0, 15),
                           ),
@@ -104,7 +104,7 @@ class __VerifyEmailViewState extends State<VerifyEmailView> {
                           Container(
                             padding: EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Color(0xFF4A90E2).withOpacity(0.1),
+                              color: Color(0xFF4A90E2).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
@@ -248,7 +248,7 @@ class MapPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Color(0xFF4A90E2).withOpacity(0.03)
+      ..color = Color(0xFF4A90E2).withValues(alpha: 0.03)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
@@ -262,7 +262,7 @@ class MapPatternPainter extends CustomPainter {
 
     // Draw random "roads"
     final roadPaint = Paint()
-      ..color = Color(0xFF4A90E2).withOpacity(0.05)
+      ..color = Color(0xFF4A90E2).withValues(alpha: 0.05)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
