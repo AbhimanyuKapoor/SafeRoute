@@ -55,7 +55,6 @@ func AnalyzeRoute(c *gin.Context) {
 		var segmentSignals []safety.SegmentSignals
 		var segmentResults []dto.SegmentResult
 		var segmentScores []int
-		mlClient := ml.NewMockClient()
 
 		// Calculating segment wise safety scores
 		for i, p := range segments {
@@ -73,7 +72,7 @@ func AnalyzeRoute(c *gin.Context) {
 				hasVision = false
 			} else {
 				// Model inference
-				modelScore, err = mlClient.Predict(imgBase64)
+				modelScore, err = ml.GetModelScore(imgBase64)
 				if err != nil {
 					hasVision = false
 				} else {
