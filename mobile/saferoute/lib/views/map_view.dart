@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -9,6 +8,7 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:location/location.dart';
 import 'package:saferoute/dto/route_request.dart';
 import 'package:saferoute/dto/route_response.dart';
+import 'package:saferoute/helpers/loading/loading_screen.dart';
 import 'package:saferoute/services/auth/bloc/auth_bloc.dart';
 import 'package:saferoute/services/auth/bloc/auth_event.dart';
 import 'package:saferoute/utilities/dialogs/logout_dialog.dart';
@@ -24,7 +24,6 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView> {
   late final TextEditingController _fromController;
   late final TextEditingController _toController;
-
   final Location _locationController = Location();
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
@@ -38,18 +37,16 @@ class _MapViewState extends State<MapView> {
 
   bool _routeDrawn = false;
   bool _showInputs = true;
-
   RouteResponse? _selectedRoute;
   Timer? _routeInfoTimer;
 
   @override
   void initState() {
     super.initState();
-
     _fromController = TextEditingController();
     _toController = TextEditingController();
-
     WidgetsBinding.instance.addPostFrameCallback((_) => _getCurrentLocation());
+
     _fromController.addListener(() {
       if (_fromController.text.isEmpty) {
         fromLocation = null;
@@ -67,7 +64,6 @@ class _MapViewState extends State<MapView> {
   void dispose() {
     _fromController.dispose();
     _toController.dispose();
-
     super.dispose();
   }
 
@@ -89,7 +85,6 @@ class _MapViewState extends State<MapView> {
                     _mapController.complete(controller);
                   },
                 ),
-
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -132,7 +127,6 @@ class _MapViewState extends State<MapView> {
                             },
                           ),
                           const SizedBox(height: 16),
-
                           // Get Routes Button (Login-style)
                           SizedBox(
                             width: double.infinity,
@@ -165,35 +159,6 @@ class _MapViewState extends State<MapView> {
                     ),
                   ),
                 ),
-
-                // Positioned(
-                //   bottom: 24,
-                //   left: 16,
-                //   child: Column(
-                //     children: [
-                //       FloatingActionButton(
-                //         heroTag: 'recenter',
-                //         onPressed: _recenterMap,
-                //         child: const Icon(Icons.my_location),
-                //       ),
-                //       const SizedBox(height: 10),
-                //       FloatingActionButton(
-                //         heroTag: 'logout',
-                //         onPressed: () async {
-                //           final shouldLogout = await (showLogoutDialog(
-                //             context,
-                //           ));
-                //           if (shouldLogout) {
-                //             context.read<AuthBloc>().add(
-                //               const AuthEventLogout(),
-                //             );
-                //           }
-                //         },
-                //         child: const Icon(Icons.logout),
-                //       ),
-                //     ],
-                //   ),
-                // ),
                 Positioned(
                   bottom: 24,
                   left: 16,
@@ -220,9 +185,7 @@ class _MapViewState extends State<MapView> {
                           child: const Icon(Icons.my_location),
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       // Logout Button
                       Container(
                         decoration: BoxDecoration(
@@ -258,7 +221,6 @@ class _MapViewState extends State<MapView> {
                     ],
                   ),
                 ),
-
                 if (!_showInputs)
                   Positioned(
                     top: 40,
@@ -272,16 +234,18 @@ class _MapViewState extends State<MapView> {
                           _polylines.clear();
                           _routeDrawn = false;
                           _markers.clear();
-                          _markers.add(
-                            Marker(
-                              markerId: const MarkerId('curr'),
-                              position: LatLng(12.95589, 77.71239),
-                              infoWindow: const InfoWindow(title: 'You'),
-                              icon: BitmapDescriptor.defaultMarkerWithHue(
-                                BitmapDescriptor.hueAzure,
+                          if (_currentLocation != null) {
+                            _markers.add(
+                              Marker(
+                                markerId: const MarkerId('curr'),
+                                position: _currentLocation!,
+                                infoWindow: const InfoWindow(title: 'You'),
+                                icon: BitmapDescriptor.defaultMarkerWithHue(
+                                  BitmapDescriptor.hueAzure,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                           _fromController.clear();
                           _toController.clear();
                         });
@@ -290,7 +254,6 @@ class _MapViewState extends State<MapView> {
                       child: const Icon(Icons.arrow_back, color: Colors.black),
                     ),
                   ),
-
                 if (_selectedRoute != null)
                   Positioned(
                     bottom: 25,
@@ -319,10 +282,8 @@ class _MapViewState extends State<MapView> {
     return GooglePlaceAutoCompleteTextField(
       textEditingController: controller,
       googleAPIKey: dotenv.env['GOOGLE_API_KEY']!,
-
       debounceTime: 400,
       isLatLngRequired: true,
-
       inputDecoration: InputDecoration(
         prefixIcon: Icon(icon),
         hintText: hint,
@@ -332,28 +293,16 @@ class _MapViewState extends State<MapView> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  controller.clear();
-                  onLocationSelected(null);
-                },
-              )
-            : null,
       ),
-
       itemClick: (prediction) {
         controller.text = prediction.description ?? '';
         controller.selection = TextSelection.fromPosition(
           TextPosition(offset: controller.text.length),
         );
       },
-
       getPlaceDetailWithLatLng: (prediction) {
         final lat = double.parse(prediction.lat!);
         final lng = double.parse(prediction.lng!);
-
         onLocationSelected(LatLng(lat, lng));
       },
     );
@@ -390,35 +339,31 @@ class _MapViewState extends State<MapView> {
       if (permissionGranted != PermissionStatus.granted) return;
     }
 
-    final Set<Marker> newMarkers = {};
-
-    newMarkers.add(
-      Marker(
-        markerId: const MarkerId('curr'),
-        position: LatLng(12.95589, 77.71239),
-        infoWindow: const InfoWindow(title: 'You'),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      ),
-    );
-
-    // Hardcoded current location for testing (same as 'from')
-    setState(() {
-      _currentLocation = LatLng(12.95589, 77.71239);
-      _markers = newMarkers;
-    });
-    _cameraToPosition(_currentLocation!);
-
-    /* Comment out real location tracking for testing
     _locationController.onLocationChanged.listen((location) {
       if (location.latitude == null || location.longitude == null) return;
+
+      final newLocation = LatLng(location.latitude!, location.longitude!);
+
       setState(() {
-        _currentLocation = LatLng(location.latitude!, location.longitude!);
+        _currentLocation = newLocation;
+        // Update current location marker
+        _markers.removeWhere((m) => m.markerId.value == 'curr');
+        _markers.add(
+          Marker(
+            markerId: const MarkerId('curr'),
+            position: newLocation,
+            infoWindow: const InfoWindow(title: 'You'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueAzure,
+            ),
+          ),
+        );
       });
+
       if (!_routeDrawn) {
-        _cameraToPosition(_currentLocation!);
+        _cameraToPosition(newLocation);
       }
     });
-    */
   }
 
   void _recenterMap() async {
@@ -438,17 +383,18 @@ class _MapViewState extends State<MapView> {
     required LatLng to,
   }) async {
     try {
-      // Hardcoded for testing
-      from = LatLng(12.95589, 77.71238);
-      to = LatLng(12.95207, 77.72091);
-
       print(
         'Fetching routes from ${from.latitude},${from.longitude} to ${to.latitude},${to.longitude}',
       );
 
+      LoadingScreen().show(context: context, text: 'Fetching Routes...');
+
       _showFromToMarkers(from: from, to: to);
 
-      final routes = await mockGetRoutes(from, to);
+      // final routes = await mockGetRoutes(from, to);
+      final routes = await getRoutes(from, to);
+
+      LoadingScreen().hide();
 
       if (routes.isEmpty) {
         if (mounted) {
@@ -460,16 +406,14 @@ class _MapViewState extends State<MapView> {
       }
 
       print('Received ${routes.length} routes');
-      _drawPolylines(routes);
 
+      _drawPolylines(routes);
       await _fitCameraToPoints(from, to);
     } catch (e) {
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Something went wrong';
-
       print('FAILED TO FETCH ROUTES: $message');
-
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -530,7 +474,6 @@ class _MapViewState extends State<MapView> {
 
   Future<void> _fitCameraToPoints(LatLng a, LatLng b) async {
     final controller = await _mapController.future;
-
     final bounds = LatLngBounds(
       southwest: LatLng(
         a.latitude < b.latitude ? a.latitude : b.latitude,
@@ -551,7 +494,6 @@ class _MapViewState extends State<MapView> {
     for (int i = 0; i < routes.length; i++) {
       try {
         final points = decodeEncodedPolyline(routes[i].polyline);
-
         if (points.isEmpty) {
           print('Warning: Route $i has no points');
           continue;
