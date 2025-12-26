@@ -1,7 +1,7 @@
-# SafeRoute 🛣️✨  
+# SafeRoute 🛣️
 ### Safety-Aware Navigation Using AI and Google Maps
 
-SafeRoute is a mobile-first navigation system that evaluates **how safe a route is**, not just how fast it is. Traditional navigation systems optimize for distance or time; SafeRoute AI augments routing with **context-aware safety analysis** using Google Maps data, computer vision, and explainable backend logic.
+SafeRoute is a mobile-first navigation system that evaluates **how safe a route is**, not just how fast it is. Traditional navigation systems optimize for distance or time; SafeRoute augments routing with **context-aware safety analysis** using Google Maps data, computer vision, and explainable backend logic.
 
 ---
 
@@ -32,7 +32,9 @@ SafeRoute evaluates **route safety probabilistically** by combining:
 - Road context
 
 The system returns:
-- A **safety score (0–100)**
+- Available routes as provided by google maps
+- **safety score (0–100)** per route
+- Segment wise scores of safety indicators
 - A **risk category (LOW / MEDIUM / HIGH)**
 - **Human-readable explanations**
 - Route geometry for map rendering
@@ -43,21 +45,42 @@ The system returns:
 
 ```
 Flutter App
-|
-| (Authenticated request with coordinates)
+│
+│  (Authenticated request with origin & destination)
 ↓
-Go Backend (Gin)
-|
-|-- Google Directions API (route geometry)
-|-- Polyline decoding & segmentation
-|-- Google Street View API (visual context)
-|-- Google Places API (activity likelihood)
-|-- ML Inference (Vertex AI)
-|
+Go Backend (Google Cloud Run)
+│
+│-- Google Directions API fetches available routes and route geometry
+│-- Encoded polylines are decoded and routes are segmented every ~500m
+│
+│   For each route segment:
+│
+│-- Google Street View API provides street-level visual context
+│   (Base64 encoding of the streetview image passed to ML service)
 ↓
-Safety Scoring & Explanation Engine
+ML Service (Google Cloud Run)
+│
+│-- YOLOv8 extracts object-level features (people, vehicles, traffic signals)
+│-- SegFormer estimates structural context (buildings, sidewalks, street lights)
+│-- Heuristic-driven pseudo-labeling converts features into probabilistic proxies
+│-- Lightweight regression models output:
+│     • Crowd Likelihood Score
+│     • Lighting Infrastructure Score
+│
 ↓
-Flutter UI (route + explanations)
+Go Backend (Google Cloud Run)
+│
+│-- Road type is inferred using Google Roads & Places API step metadata
+│-- Google Places API estimates activity likelihood from nearby POIs (~100m radius)
+│-- Time-of-day risk adjustment is applied
+│-- Segment safety score is computed
+│
+↓
+Segment scores are aggregated using average + worst-case weighting
+↓
+Final route safety score, risk level, and explanations are returned
+↓
+Flutter App renders routes and displays safety insights
 ```
 
 ---
@@ -97,9 +120,9 @@ The backend acts as the **orchestrator** and **decision layer**.
 
 - Backend requests Directions API with origin & destination
 - Retrieves:
+  - Available routes between the two points 
   - Total distance & duration
   - Encoded polyline representing the route geometry
-- Supports future extension to alternative routes
 
 ---
 
@@ -118,9 +141,9 @@ Each segment represents a location where safety is evaluated.
 ### 3️⃣ Street View Image Retrieval
 
 For each segment:
-- Backend constructs a **Street View Static API URL**
-- Images are not downloaded or stored
-- URLs are passed to the ML service
+- Backend calculates the direction in which the road points for the segment
+- Constructs a **Street View Static API URL** using those calculations
+- Images are converted into base64 encoded strings which are passed to the ML service
 
 This provides **human-perspective visual context**.
 
@@ -136,7 +159,7 @@ To estimate how “busy” an area is:
   - Transit stations
   - Restaurants
 
-This yields an **ActivityLikelihoodScore**, a proxy for human presence — especially important at night when Street View images may be outdated.
+This yields an **ActivityLikelihoodScore**, a proxy for human presence - especially important at night when Street View images may be outdated.
 
 ---
 
@@ -153,16 +176,29 @@ This ensures honest handling of temporal uncertainty.
 
 ---
 
+### 6️⃣ Road Type Risk Modeling
+
+Road context significantly affects perceived safety, especially during off-peak hours.
+
+To incorporate this:
+- The backend infers road type using **Google Directions API step metadata**, such as road names and maneuver context
+- Roads are categorized into broad classes (e.g., main roads, residential roads, service roads)
+- Less-traveled and residential roads receive higher risk penalties compared to main or arterial roads
+
+By explicitly modeling road type, the system avoids assuming that all navigable roads are equally safe adding to the safety assessment.
+
+---
+
 ## 🤖 Machine Learning Pipeline
 
 > **ML estimates probabilistic indicators — not safety itself.**
 
-### ML Pipeline Overview (SafeRoute AI)
+### ML Pipeline Overview (SafeRoute)
 
 The ML pipeline estimates probabilistic indicators, not safety itself. Given a street-level image (base64-encoded), the system runs a multi-stage inference flow:
 
 - **YOLOv8** extracts interpretable object features (people, vehicles, traffic lights)
-- **SegFormer** estimates structural context (buildings, sidewalks, poles, vegetation)
+- **SegFormer** estimates structural context (buildings, sidewalks, poles)
 
 These features are aggregated into a compact vector.
 
@@ -174,12 +210,10 @@ At inference, the ML pipeline outputs:
 - `crowd_score`
 - `lighting_score`
 
-Time-aware adjustments and final safety reasoning are handled **outside ML** in the backend.
-
 The ML service is:
 - Exposed via **FastAPI**
 - Containerized with **Docker**
-- Deployed as a **Vertex AI custom prediction endpoint**
+- Deployed as a **Google cloud run service**
 
 ---
 
@@ -190,9 +224,9 @@ The ML service is:
 Each segment receives a safety score computed as:
 ```
 SegmentSafetyScore =
-0.30 × LightingScore
-0.25 × CrowdScore
-0.20 × ActivityLikelihoodScore
+0.30 × ActivityLikelihoodScore
+0.25 × LightingScore
+0.20 × CrowdScore
 0.15 × TimeOfDayScore
 0.10 × RoadTypeScore
 ```
@@ -252,7 +286,20 @@ These explanations are returned alongside the score and displayed directly in th
       "road_type": "Mostly residential roads"
     }
   },
-  "segments": []
+  "segments": [
+    {
+        "coordinate": {
+            "lat": 27.1751,
+            "lng": 78.0421
+        },
+        "lighting_score": 65,
+        "crowd_score": 72,
+        "time_of_day_score": 60,
+        "road_type_score": 80,
+        "activity_likelihood_score": 61,
+        "segment_safety_score": 66
+    },
+  ... ]
 }
 ```
 
