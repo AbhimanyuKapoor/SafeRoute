@@ -303,6 +303,8 @@ These explanations are returned alongside the score and displayed directly in th
 }
 ```
 
+---
+
 Future Improvements:
 
 - Historical crime data integration
